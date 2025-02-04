@@ -1,0 +1,131 @@
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script>
+      // Componente per aggiornare e stampare la posizione
+      AFRAME.registerComponent('log-position', {
+        tick: function () {
+          let position = this.el.getAttribute('position');
+          console.log(`Posizione attuale: x=${position.x}, y=${position.y}, z=${position.z}`);
+
+          // Opzionale: Mostra la posizione in un testo nella scena
+          let textEntity = document.querySelector('#position-text');
+          textEntity.setAttribute('value', `x: ${position.x.toFixed(2)} y: ${position.y.toFixed(2)} z: ${position.z.toFixed(2)}`);
+        }
+      });
+
+      // Componente per gestire il movimento lungo l'asse X
+      AFRAME.registerComponent('move-along-x', {
+        init: function () {
+          this.speed = 0.1; // Velocità di movimento
+          this.minX = -2;  // Limite minimo lungo l'asse X
+          this.maxX = 12;   // Limite massimo lungo l'asse X
+
+          // Aggiungi un listener per l'evento keydown
+          window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W') {
+              this.moveForward();
+            } else if (e.key === 's' || e.key === 'S') {
+              this.moveBackward();
+            }
+          });
+        },
+
+        moveForward: function () {
+            let position = this.el.getAttribute('position');
+            let newX = position.x - this.speed; // Muovi lungo l'asse X negativo
+
+            // Limita il movimento lungo l'asse X
+            if (newX >= this.minX && newX <= this.maxX) {
+                this.el.setAttribute('position', { x: newX, y: position.y, z: position.z });
+            }
+        },
+
+        moveBackward: function () {
+            let position = this.el.getAttribute('position');
+            let newX = position.x + this.speed; // Muovi lungo l'asse X positivo
+
+            // Limita il movimento lungo l'asse X
+            if (newX >= this.minX && newX <= this.maxX) {
+                this.el.setAttribute('position', { x: newX, y: position.y, z: position.z });
+            }
+        }
+      });
+    </script>
+
+<script>
+    AFRAME.registerComponent('frame-picture', {
+      schema: {
+        src: { type: 'string' },  // Immagine del quadro
+        width: { type: 'number', default: 1.5 },  // Larghezza quadro
+        height: { type: 'number', default: 1.5 }  // Altezza quadro
+      },
+
+      init: function () {
+        let data = this.data;
+        let el = this.el;
+
+        // Crea il quadro
+        let picture = document.createElement('a-plane');
+        picture.setAttribute('src', data.src);
+        picture.setAttribute('width', data.width);
+        picture.setAttribute('height', data.height);
+        el.appendChild(picture);
+
+        // Crea la cornice attorno al quadro
+        let frameColor = "grey";
+        let depth = 0.05; // Spessore della cornice
+        let borderSize = 0.1; // Spessore del bordo
+
+        let positions = [
+          { x: 0, y: data.height / 2, z: 0, width: data.width + borderSize, height: borderSize }, // Top
+          { x: 0, y: -data.height / 2, z: 0, width: data.width + borderSize, height: borderSize }, // Bottom
+          { x: -data.width / 2, y: 0, z: 0, width: borderSize, height: data.height + borderSize }, // Sinistra
+          { x: data.width / 2, y: 0, z: 0, width: borderSize, height: data.height + borderSize }  // Destra
+        ];
+
+        positions.forEach(pos => {
+          let border = document.createElement('a-box');
+          border.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+          border.setAttribute('width', pos.width);
+          border.setAttribute('height', pos.height);
+          border.setAttribute('depth', depth);
+          border.setAttribute('color', frameColor);
+          el.appendChild(border);
+        });
+      }
+    });
+  </script>
+
+  </head>
+  <body>
+    <a-scene>
+      <!-- Carica il modello del museo -->
+      <a-entity gltf-model="museum.glb" position="0 0 0"></a-entity>
+
+      <!-- Camera RIG con logging della posizione e movimento lungo l'asse X -->
+      <a-entity id="rig" position="12 0 0" log-position move-along-x rotation="0 90 0">
+        <!-- Disabilita wasd-controls e usa solo look-controls -->
+        <a-camera look-controls="enabled: true" wasd-controls="enabled: false">
+        </a-camera>
+      </a-entity>
+
+      <!-- Quadri personalizzati -->
+      <a-entity frame-picture="src: test.jpg" position="-2 1.5 -0.92"></a-entity>
+      <a-entity frame-picture="src: blocchi.jpg" position="1 1.5 -0.92"></a-entity>
+      <a-entity frame-picture="src: pinza.jpg" position="3.5 1.5 -0.92"></a-entity>
+      <a-entity frame-picture="src: luca.jpg" position="6.3 1.5 -0.92"></a-entity>
+
+      <a-entity frame-picture="src: robot.jpg" position="-2 1.5 0.72" rotation="0 180 0"></a-entity>
+      <a-entity frame-picture="src: centralina.jpg" position="0 1.5 0.72" rotation="0 180 0"></a-entity>
+      <a-entity frame-picture="src: lavagna.jpg" position="3 1.5 0.70" rotation="0 180 0"></a-entity>
+      <a-entity frame-picture="src: assemblaggio.jpg" position="5.6 1.5 0.72" rotation="0 180 0"></a-entity>
+
+
+      <!-- Testo che mostra la posizione attuale -->
+      <a-text id="position-text" value="x: 0 y: 1.6 z: 5"
+        position="0 2 -2" align="center" color="white">
+      </a-text>
+    </a-scene>
+  </body>
+</html>
